@@ -1,5 +1,6 @@
 package com.rafa.rpggame.models.zones;
 
+import com.rafa.rpggame.game.combat.CombatAction;
 import com.rafa.rpggame.game.combat.CombatResult;
 import com.rafa.rpggame.game.combat.CombatSimulator;
 import com.rafa.rpggame.models.character.Character;
@@ -44,7 +45,11 @@ public class Exploration {
 
         return generatedEnemies;
     }
-
+    public List<CombatAction> getCombatLog() {
+        // Si tenemos un resultado de combate, devolver su log
+        // Como no tenemos acceso directo al log, devolvemos null por ahora
+        return null;
+    }
     public void startCombat() {
         status = ExplorationStatus.IN_COMBAT;
         // Iniciar combate automático

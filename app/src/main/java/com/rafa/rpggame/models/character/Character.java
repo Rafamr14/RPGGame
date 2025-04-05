@@ -19,6 +19,7 @@ public class Character {
     private int maxInventorySize;
 
     public Character(String name, CharacterClass characterClass, CharacterRole role) {
+        this.id = System.currentTimeMillis(); // Generar ID por defecto
         this.name = name;
         this.characterClass = characterClass;
         this.role = role;
@@ -29,7 +30,6 @@ public class Character {
         this.inventory = new ArrayList<>();
         this.maxInventorySize = 20;
     }
-
     private HashMap<Stat, Integer> initStats() {
         HashMap<Stat, Integer> baseStats = new HashMap<>();
 
@@ -191,5 +191,38 @@ public class Character {
 
     public void setId(long id) {
         this.id = id;
+    }
+        
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+
+    public void setCharacterClass(CharacterClass characterClass) {
+        this.characterClass = characterClass;
+    }
+
+
+    public void setRole(CharacterRole role) {
+        this.role = role;
+    }
+
+
+    public void setLevel(int level) {
+        this.level = level;
+    }
+
+
+    public void setStats(HashMap<Stat, Integer> stats) {
+        this.stats = stats;
+    }
+
+    public void setEquipment(Equipment equipment) {
+        this.equipment = equipment;
+    }
+
+    public void setInventory(List<Item> inventory) {
+        this.inventory = inventory;
     }
 }

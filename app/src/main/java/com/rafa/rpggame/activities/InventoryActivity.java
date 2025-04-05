@@ -12,7 +12,7 @@ import com.rafa.rpggame.R;
 import com.rafa.rpggame.adapters.EquipmentAdapter;
 import com.rafa.rpggame.adapters.ItemAdapter;
 import com.rafa.rpggame.dialogs.SellItemDialog;
-import com.rafa.rpggame.managers.UserAccountManager;
+import com.rafa.rpggame.managers.GameDataManager;
 import com.rafa.rpggame.models.UserAccount;
 import com.rafa.rpggame.models.character.Character;
 import com.rafa.rpggame.models.character.Stat;
@@ -49,7 +49,7 @@ public class InventoryActivity extends AppCompatActivity {
         setContentView(R.layout.activity_inventory);
 
         // Obtener datos
-        userAccount = UserAccountManager.getCurrentAccount();
+        userAccount = GameDataManager.getCurrentAccount();
         selectedCharacter = userAccount.getSelectedCharacter();
 
         // Inicializar vistas
@@ -111,12 +111,12 @@ public class InventoryActivity extends AppCompatActivity {
                 }
 
                 updateUI();
-                UserAccountManager.updateAccount();
+                GameDataManager.updateAccount();
             } else if (selectedSlot != null) {
                 // Desequipar
                 selectedCharacter.unequip(selectedSlot);
                 updateUI();
-                UserAccountManager.updateAccount();
+                GameDataManager.updateAccount();
             }
         });
 

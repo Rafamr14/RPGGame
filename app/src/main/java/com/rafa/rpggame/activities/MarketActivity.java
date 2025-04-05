@@ -16,7 +16,7 @@ import com.rafa.rpggame.R;
 import com.rafa.rpggame.adapters.ItemAdapter;
 import com.rafa.rpggame.adapters.MarketListingAdapter;
 import com.rafa.rpggame.managers.MarketManager;
-import com.rafa.rpggame.managers.UserAccountManager;
+import com.rafa.rpggame.managers.GameDataManager;
 import com.rafa.rpggame.models.UserAccount;
 import com.rafa.rpggame.models.character.Character;
 import com.rafa.rpggame.models.character.CharacterClass;
@@ -79,7 +79,7 @@ public class MarketActivity extends AppCompatActivity {
         setContentView(R.layout.activity_market);
 
         // Obtener datos
-        userAccount = UserAccountManager.getCurrentAccount();
+        userAccount = GameDataManager.getCurrentAccount();
         market = MarketManager.getMarket();
 
         // Inicializar vistas
@@ -146,34 +146,40 @@ public class MarketActivity extends AppCompatActivity {
             buyCharacterButton.setEnabled(true);
         });
 
-        // Manejar la compra del personaje
         buyCharacterButton.setOnClickListener(v -> {
             if (selectedCharacterTemplate != null) {
                 if (userAccount.getCoins() >= selectedCharacterTemplate.getPrice()) {
-                    // Comprar el personaje
-                    userAccount.reduceCoins(selectedCharacterTemplate.getPrice());
+                    try {
+                        // Generar un ID único para el personaje
+                        long characterId = System.currentTimeMillis();
 
-                    // Crear el personaje y añadirlo a la cuenta
-                    Character newCharacter = new Character(
-                            selectedCharacterTemplate.getName(),
-                            selectedCharacterTemplate.getCharacterClass(),
-                            selectedCharacterTemplate.getRole()
-                    );
-                    userAccount.addCharacter(newCharacter);
+                        // Comprar el personaje
+                        userAccount.reduceCoins(selectedCharacterTemplate.getPrice());
 
-                    // Seleccionar automáticamente si es el primer personaje
-                    if (userAccount.getCharacters().size() == 1) {
+                        // Crear el personaje y añadirlo a la cuenta
+                        Character newCharacter = new Character(
+                                selectedCharacterTemplate.getName(),
+                                selectedCharacterTemplate.getCharacterClass(),
+                                selectedCharacterTemplate.getRole()
+                        );
+                        newCharacter.setId(characterId);
+                        userAccount.addCharacter(newCharacter);
+
+                        // Seleccionar explícitamente el personaje
                         userAccount.setSelectedCharacter(newCharacter);
+
+                        // Guardar cambios usando el nuevo gestor
+                        GameDataManager.updateAccount();
+
+                        Toast.makeText(this, "¡Personaje comprado con éxito! " + newCharacter.getName(), Toast.LENGTH_SHORT).show();
+
+                        // Actualizar la interfaz inmediatamente
+                        characterAdapter.notifyDataSetChanged();
+                        updateUI();
+                    } catch (Exception e) {
+                        Toast.makeText(this, "Error: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                        e.printStackTrace();
                     }
-
-                    // Guardar cambios
-                    UserAccountManager.updateAccount();
-
-                    Toast.makeText(this, "¡Personaje comprado con éxito!", Toast.LENGTH_SHORT).show();
-
-                    // Actualizar la interfaz inmediatamente
-                    characterAdapter.notifyDataSetChanged();
-                    updateUI();
                 } else {
                     Toast.makeText(this, "No tienes suficientes monedas", Toast.LENGTH_SHORT).show();
                 }
@@ -357,7 +363,7 @@ public class MarketActivity extends AppCompatActivity {
         updateSellButton();
 
         // Guardar cambios
-        UserAccountManager.updateAccount();
+        GameDataManager.updateAccount();
         MarketManager.updateMarket();
     }
 

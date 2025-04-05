@@ -1,16 +1,7 @@
 package com.rafa.rpggame.models;
 
 import com.rafa.rpggame.models.character.Character;
-import com.rafa.rpggame.models.character.CharacterClass;
-import com.rafa.rpggame.models.character.CharacterRole;
 import com.rafa.rpggame.models.items.Item;
-import java.util.ArrayList;
-import java.util.List;
-import com.rafa.rpggame.models.items.Equipment;
-import com.rafa.rpggame.models.items.EquipableItem;
-import com.rafa.rpggame.models.items.ConsumableItem;
-import com.rafa.rpggame.models.items.Item;
-import com.rafa.rpggame.models.character.Character;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -29,10 +20,6 @@ public class UserAccount {
     private long lastStaminaRegenTime;
     private static final int STAMINA_REGEN_MINUTES = 10; // Un punto cada 10 minutos
 
-    // --- Nuevas líneas añadidas ---
-    private Equipment equipment; // Equipo general para la cuenta
-    // ------------------------------
-
     public UserAccount(String username) {
         this.username = username;
         this.accountLevel = 1;
@@ -44,10 +31,6 @@ public class UserAccount {
         this.characters = new ArrayList<>();
         this.mailbox = new ArrayList<>();
         this.lastStaminaRegenTime = System.currentTimeMillis();
-
-        // --- Inicializar el equipo general ---
-        this.equipment = new Equipment();
-        // --------------------------------------
     }
 
     public void updateStamina() {
@@ -86,12 +69,16 @@ public class UserAccount {
         return level * 100;
     }
 
-    // En UserAccount.java
     public void addCharacter(Character character) {
         if (this.characters == null) {
             this.characters = new ArrayList<>();
         }
         this.characters.add(character);
+
+        // Si no hay personaje seleccionado, seleccionar este
+        if (selectedCharacter == null) {
+            selectedCharacter = character;
+        }
     }
 
     public int getMaxCharacters() {
@@ -133,73 +120,76 @@ public class UserAccount {
         return true;
     }
 
-    // --- Nuevos métodos para acceder al equipo ---
-    public Equipment getEquipment() {
-        return equipment;
-    }
-    // ----------------------------------------------
-
-    // Método para usar ítems
-    public boolean useItem(Item item) {
-        if (item instanceof EquipableItem) {
-            EquipableItem equipItem = (EquipableItem) item;
-            // Guardar el ítem anterior (si existe)
-            EquipableItem oldItem = equipment.getItemInSlot(equipItem.getSlot());
-
-            // Equipar el nuevo ítem
-            equipment.equip(equipItem);
-
-            // Remover el ítem del inventario
-            if (selectedCharacter != null) {
-                selectedCharacter.getInventory().remove(item);
-            }
-
-            // Si había un ítem anterior, añadirlo al inventario
-            if (oldItem != null && selectedCharacter != null) {
-                selectedCharacter.addToInventory(oldItem);
-            }
-
-            return true;
-        } else if (item instanceof ConsumableItem) {
-            // Usar ítem consumible
-            if (selectedCharacter != null && item.use(selectedCharacter)) {
-                selectedCharacter.getInventory().remove(item);
-                return true;
-            }
-        }
-        return false;
-    }
-
     // Getters y Setters
     public String getUsername() {
         return username;
+    }
+
+    public void setUsername(String username) {
+        this.username = username;
     }
 
     public int getAccountLevel() {
         return accountLevel;
     }
 
+    public void setAccountLevel(int accountLevel) {
+        this.accountLevel = accountLevel;
+    }
+
+    public int getExperience() {
+        return experience;
+    }
+
+    public void setExperience(int experience) {
+        this.experience = experience;
+    }
+
     public int getStamina() {
         return stamina;
+    }
+
+    public void setStamina(int stamina) {
+        this.stamina = stamina;
     }
 
     public int getMaxStamina() {
         return maxStamina;
     }
 
+    public void setMaxStamina(int maxStamina) {
+        this.maxStamina = maxStamina;
+    }
+
     public int getCoins() {
         return coins;
+    }
+
+    public void setCoins(int coins) {
+        this.coins = coins;
     }
 
     public int getGems() {
         return gems;
     }
 
+    public void setGems(int gems) {
+        this.gems = gems;
+    }
+
     public List<Character> getCharacters() {
         return characters;
     }
 
+    public void setCharacters(List<Character> characters) {
+        this.characters = characters;
+    }
+
     public Character getSelectedCharacter() {
+        // Si no hay personaje seleccionado pero hay personajes disponibles, seleccionar el primero
+        if (selectedCharacter == null && characters != null && !characters.isEmpty()) {
+            selectedCharacter = characters.get(0);
+        }
         return selectedCharacter;
     }
 
@@ -209,6 +199,18 @@ public class UserAccount {
 
     public List<Item> getMailbox() {
         return mailbox;
+    }
+
+    public void setMailbox(List<Item> mailbox) {
+        this.mailbox = mailbox;
+    }
+
+    public long getLastStaminaRegenTime() {
+        return lastStaminaRegenTime;
+    }
+
+    public void setLastStaminaRegenTime(long lastStaminaRegenTime) {
+        this.lastStaminaRegenTime = lastStaminaRegenTime;
     }
 
     public long getId() {

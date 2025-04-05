@@ -8,7 +8,7 @@ import android.widget.TextView;
 import androidx.appcompat.app.AppCompatActivity;
 import com.rafa.rpggame.R;
 import com.rafa.rpggame.adapters.CharacterAdapter;
-import com.rafa.rpggame.managers.UserAccountManager;
+import com.rafa.rpggame.managers.GameDataManager;
 import com.rafa.rpggame.models.UserAccount;
 import com.rafa.rpggame.models.character.Character;
 
@@ -25,7 +25,7 @@ public class CharacterSelectActivity extends AppCompatActivity {
         setContentView(R.layout.activity_character_select);
 
         // Obtener la cuenta del usuario
-        userAccount = UserAccountManager.getCurrentAccount();
+        userAccount = GameDataManager.getCurrentAccount();
 
         // Si no hay cuenta, ir a login
         if (userAccount == null) {
@@ -50,7 +50,7 @@ public class CharacterSelectActivity extends AppCompatActivity {
         characterListView.setOnItemClickListener((parent, view, position, id) -> {
             Character selectedCharacter = userAccount.getCharacters().get(position);
             userAccount.setSelectedCharacter(selectedCharacter);
-            UserAccountManager.updateAccount();
+            GameDataManager.updateAccount();
 
             // Ir a la pantalla principal
             startActivity(new Intent(CharacterSelectActivity.this, MainActivity.class));

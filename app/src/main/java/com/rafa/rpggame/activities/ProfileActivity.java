@@ -6,7 +6,7 @@ import android.widget.Button;
 import android.widget.TextView;
 import androidx.appcompat.app.AppCompatActivity;
 import com.rafa.rpggame.R;
-import com.rafa.rpggame.managers.UserAccountManager;
+import com.rafa.rpggame.managers.GameDataManager;
 import com.rafa.rpggame.models.UserAccount;
 
 public class ProfileActivity extends AppCompatActivity {
@@ -25,7 +25,7 @@ public class ProfileActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_profile);
 
-        userAccount = UserAccountManager.getCurrentAccount();
+        userAccount = GameDataManager.getCurrentAccount();
 
         // Inicializar vistas
         usernameText = findViewById(R.id.username_text);
@@ -46,7 +46,7 @@ public class ProfileActivity extends AppCompatActivity {
 
         // Evento de logout
         logoutButton.setOnClickListener(v -> {
-            UserAccountManager.logout();
+            GameDataManager.logout();
             startActivity(new Intent(ProfileActivity.this, LoginActivity.class));
             finishAffinity(); // Cierra todas las actividades en la pila
         });

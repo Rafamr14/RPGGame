@@ -9,7 +9,7 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 import androidx.appcompat.app.AppCompatActivity;
 import com.rafa.rpggame.R;
-import com.rafa.rpggame.managers.UserAccountManager;
+import com.rafa.rpggame.managers.GameDataManager;
 import com.rafa.rpggame.models.UserAccount;
 import com.rafa.rpggame.models.character.Character;
 import android.widget.Toast;
@@ -39,7 +39,19 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         // Obtener datos
-        userAccount = UserAccountManager.getCurrentAccount();
+        userAccount = GameDataManager.getCurrentAccount();
+
+        // Comprobar si tiene un personaje seleccionado
+        if (userAccount.getSelectedCharacter() == null && !userAccount.getCharacters().isEmpty()) {
+            // No tiene personaje seleccionado pero sí tiene personajes, seleccionar el primero
+            userAccount.setSelectedCharacter(userAccount.getCharacters().get(0));
+            GameDataManager.updateAccount();
+            Toast.makeText(this, "Se ha seleccionado automáticamente: " + userAccount.getSelectedCharacter().getName(),
+                    Toast.LENGTH_SHORT).show();
+        }
+
+        selectedCharacter = userAccount.getSelectedCharacter();
+
         characterNameText = findViewById(R.id.character_name_text);
         characterLevelText = findViewById(R.id.character_level_text);
         characterAvatar = findViewById(R.id.character_avatar);
@@ -54,9 +66,8 @@ public class MainActivity extends AppCompatActivity {
         inventoryButton = findViewById(R.id.inventory_button);
         marketButton = findViewById(R.id.market_button);
         profileButton = findViewById(R.id.profile_button);
-// En MainActivity.java, método onCreate:
 
-// Modificar el listener del botón de exploración
+        // Modificar el listener del botón de exploración
         exploreButton.setOnClickListener(v -> {
             if (userAccount.getSelectedCharacter() == null) {
                 Toast.makeText(this, "Primero debes seleccionar un personaje",
@@ -69,11 +80,12 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-// Añadir un botón para la gestión de personajes
+        // Añadir un botón para la gestión de personajes
         Button charactersButton = findViewById(R.id.characters_button);
         charactersButton.setOnClickListener(v -> {
             startActivity(new Intent(MainActivity.this, CharacterManagementActivity.class));
         });
+
         // Comprobar si tiene personajes
         if (userAccount.getCharacters().isEmpty()) {
             // No tiene personajes, mostrar mensaje
@@ -83,23 +95,12 @@ public class MainActivity extends AppCompatActivity {
             exploreButton.setEnabled(false);
             inventoryButton.setEnabled(false);
         } else {
-            // Si tiene personajes, seleccionar el primero por defecto
-            userAccount.setSelectedCharacter(userAccount.getCharacters().get(0));
-
             // Habilitar todos los botones
             exploreButton.setEnabled(true);
             inventoryButton.setEnabled(true);
         }
 
         // Configurar eventos de clic
-        exploreButton.setOnClickListener(v -> {
-            if (userAccount.getSelectedCharacter() == null) {
-                Toast.makeText(this, "Primero debes comprar un personaje en la tienda", Toast.LENGTH_SHORT).show();
-                return;
-            }
-            startActivity(new Intent(MainActivity.this, ExploreActivity.class));
-        });
-
         inventoryButton.setOnClickListener(v -> {
             if (userAccount.getSelectedCharacter() == null) {
                 Toast.makeText(this, "Primero debes comprar un personaje en la tienda", Toast.LENGTH_SHORT).show();
@@ -128,21 +129,43 @@ public class MainActivity extends AppCompatActivity {
         if (userAccount.getSelectedCharacter() != null) {
             characterNameText.setText(userAccount.getSelectedCharacter().getName());
             characterLevelText.setText("Nivel " + userAccount.getSelectedCharacter().getLevel());
+
             // Configurar el avatar según la clase
-            // (código para mostrar el avatar)
+            switch (userAccount.getSelectedCharacter().getCharacterClass()) {
+                case WARRIOR:
+                    characterAvatar.setImageResource(R.drawable.avatar_warrior);
+                    break;
+                case MAGE:
+                    characterAvatar.setImageResource(R.drawable.avatar_mage);
+                    break;
+                case ROGUE:
+                    characterAvatar.setImageResource(R.drawable.avatar_rogue);
+                    break;
+                case CLERIC:
+                    characterAvatar.setImageResource(R.drawable.avatar_cleric);
+                    break;
+                default:
+                    characterAvatar.setImageResource(R.drawable.avatar_default);
+                    break;
+            }
         } else {
             // Ocultar o mostrar un placeholder para la sección de personaje
             characterNameText.setText("Sin personaje");
             characterLevelText.setText("Compra un personaje en la tienda");
+            characterAvatar.setImageResource(R.drawable.avatar_default);
         }
     }
 
     @Override
     protected void onResume() {
         super.onResume();
+
+        // Recargar los datos actualizados
+        userAccount = GameDataManager.getCurrentAccount();
+        selectedCharacter = userAccount.getSelectedCharacter();
+
         // Actualizar stamina cada vez que se vuelve a la pantalla principal
         userAccount.updateStamina();
         updateUI();
     }
-
 }

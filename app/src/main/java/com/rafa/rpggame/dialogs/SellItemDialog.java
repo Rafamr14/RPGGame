@@ -14,7 +14,7 @@ import androidx.fragment.app.DialogFragment;
 import com.rafa.rpggame.R;
 import com.rafa.rpggame.activities.InventoryActivity;
 import com.rafa.rpggame.managers.MarketManager;
-import com.rafa.rpggame.managers.UserAccountManager;
+import com.rafa.rpggame.managers.GameDataManager;
 import com.rafa.rpggame.models.UserAccount;
 import com.rafa.rpggame.models.items.ConsumableItem;
 import com.rafa.rpggame.models.items.EquipableItem;
@@ -74,7 +74,7 @@ public class SellItemDialog extends DialogFragment {
                     return;
                 }
 
-                UserAccount userAccount = UserAccountManager.getCurrentAccount();
+                UserAccount userAccount = GameDataManager.getCurrentAccount();
                 Market market = MarketManager.getMarket();
 
                 boolean success = market.addListing(userAccount, item, price);
@@ -82,7 +82,7 @@ public class SellItemDialog extends DialogFragment {
                 if (success) {
                     Toast.makeText(getActivity(), "Ítem puesto a la venta", Toast.LENGTH_SHORT).show();
                     MarketManager.updateMarket();
-                    UserAccountManager.updateAccount();
+                    GameDataManager.updateAccount();
                     dismiss();
 
                     // Actualizar la actividad de inventario

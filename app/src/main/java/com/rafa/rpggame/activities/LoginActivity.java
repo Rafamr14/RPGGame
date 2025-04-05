@@ -7,7 +7,7 @@ import android.widget.EditText;
 import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 import com.rafa.rpggame.R;
-import com.rafa.rpggame.managers.UserAccountManager;
+import com.rafa.rpggame.managers.GameDataManager;
 import com.rafa.rpggame.models.UserAccount;
 
 public class LoginActivity extends AppCompatActivity {
@@ -27,7 +27,7 @@ public class LoginActivity extends AppCompatActivity {
         createAccountButton = findViewById(R.id.create_account_button);
 
         // Comprobar si ya hay sesión iniciada
-        UserAccount currentAccount = UserAccountManager.getCurrentAccount();
+        UserAccount currentAccount = GameDataManager.getCurrentAccount();
         if (currentAccount != null) {
             // Ir directamente a la selección de personaje
             goToMain();
@@ -43,7 +43,7 @@ public class LoginActivity extends AppCompatActivity {
                 return;
             }
 
-            boolean success = UserAccountManager.login(username);
+            boolean success = GameDataManager.login(username);
 
             if (success) {
                 goToMain();
@@ -60,7 +60,7 @@ public class LoginActivity extends AppCompatActivity {
                 return;
             }
 
-            UserAccount newAccount = UserAccountManager.createAccount(username);
+            UserAccount newAccount = GameDataManager.createAccount(username);
 
             if (newAccount != null) {
                 Toast.makeText(this, "Cuenta creada con éxito", Toast.LENGTH_SHORT).show();

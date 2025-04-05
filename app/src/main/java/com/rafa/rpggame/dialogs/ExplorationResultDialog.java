@@ -15,6 +15,7 @@ import com.rafa.rpggame.models.zones.Exploration;
 import com.rafa.rpggame.models.zones.ExplorationStatus;
 import com.rafa.rpggame.game.combat.CombatAction;
 import com.rafa.rpggame.game.combat.CombatActionType;
+
 import java.util.List;
 
 public class ExplorationResultDialog extends DialogFragment {
@@ -55,28 +56,24 @@ public class ExplorationResultDialog extends DialogFragment {
             dropsListView.setVisibility(View.GONE);
         }
 
-        // Mostrar el log de combate
+        // Mostrar el log de combate - Versión simplificada
         StringBuilder logBuilder = new StringBuilder();
         logBuilder.append("Resumen del combate:\n\n");
 
-        /* Obtener el log de combate (suponiendo que exploration tiene acceso a él)
-        List<CombatAction> combatLog = exploration.getCombatLog();
-        if (combatLog != null && !combatLog.isEmpty()) {
-            for (CombatAction action : combatLog) {
-                // Solo mostrar acciones relevantes (ataques, golpes críticos, etc.)
-                if (action.getType() == CombatActionType.ATTACK ||
-                        action.getType() == CombatActionType.CRITICAL_HIT ||
-                        action.getType() == CombatActionType.HEAL ||
-                        action.getType() == CombatActionType.COMBAT_END) {
-
-                    logBuilder.append("• ").append(action.getText()).append("\n");
-                }
+        // Usar un texto estático en lugar de intentar acceder al combatLog
+        if (exploration.getStatus() == ExplorationStatus.VICTORY) {
+            logBuilder.append("• Has derrotado a todos los enemigos.\n");
+            logBuilder.append("• Has ganado ").append(exploration.getExperienceGained()).append(" puntos de experiencia.\n");
+            if (!exploration.getDrops().isEmpty()) {
+                logBuilder.append("• Has encontrado ").append(exploration.getDrops().size()).append(" objetos.\n");
             }
         } else {
-            logBuilder.append("No hay registro detallado del combate.");
+            logBuilder.append("• Has sido derrotado por los enemigos.\n");
+            logBuilder.append("• No has ganado experiencia.\n");
+            logBuilder.append("• Has perdido la oportunidad de encontrar objetos.\n");
         }
 
-        combatLogText.setText(logBuilder.toString());*/
+        combatLogText.setText(logBuilder.toString());
 
         closeButton.setOnClickListener(v -> dismiss());
 

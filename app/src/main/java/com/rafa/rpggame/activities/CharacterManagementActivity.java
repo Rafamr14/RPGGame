@@ -11,7 +11,7 @@ import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 import com.rafa.rpggame.R;
 import com.rafa.rpggame.adapters.CharacterAdapter;
-import com.rafa.rpggame.managers.UserAccountManager;
+import com.rafa.rpggame.managers.GameDataManager;
 import com.rafa.rpggame.models.UserAccount;
 import com.rafa.rpggame.models.character.Character;
 import android.os.Bundle;
@@ -24,7 +24,7 @@ import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 import com.rafa.rpggame.R;
 import com.rafa.rpggame.adapters.CharacterAdapter;
-import com.rafa.rpggame.managers.UserAccountManager;
+import com.rafa.rpggame.managers.GameDataManager;
 import com.rafa.rpggame.models.UserAccount;
 import com.rafa.rpggame.models.character.Character;
 import com.rafa.rpggame.models.character.Stat;
@@ -45,7 +45,7 @@ public class CharacterManagementActivity extends AppCompatActivity {
         setContentView(R.layout.activity_character_management);
 
         // Obtener cuenta
-        userAccount = UserAccountManager.getCurrentAccount();
+        userAccount = GameDataManager.getCurrentAccount();
 
         // Inicializar vistas
         characterListView = findViewById(R.id.character_list_view);
@@ -72,7 +72,7 @@ public class CharacterManagementActivity extends AppCompatActivity {
         selectButton.setOnClickListener(v -> {
             if (selectedCharacter != null) {
                 userAccount.setSelectedCharacter(selectedCharacter);
-                UserAccountManager.updateAccount();
+                GameDataManager.updateAccount();
                 Toast.makeText(this, "Personaje seleccionado: " + selectedCharacter.getName(),
                         Toast.LENGTH_SHORT).show();
                 selectButton.setEnabled(false);
@@ -91,7 +91,7 @@ public class CharacterManagementActivity extends AppCompatActivity {
                 if (userAccount.getCoins() >= cost) {
                     userAccount.reduceCoins(cost);
                     selectedCharacter.levelUp();
-                    UserAccountManager.updateAccount();
+                    GameDataManager.updateAccount();
 
                     // Actualizar UI
                     updateCharacterInfo();
