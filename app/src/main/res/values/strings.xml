@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Fantasy RPG</string>
+
+    <!-- Textos generales -->
+    <string name="loading">Cargando...</string>
+    <string name="ok">Aceptar</string>
+    <string name="cancel">Cancelar</string>
+    <string name="back">Volver</string>
+    <string name="yes">Sí</string>
+    <string name="no">No</string>
+
+    <!-- Mensajes de error -->
+    <string name="error_network">Error de conexión. Verifica tu conexión a internet.</string>
+    <string name="error_server">Error del servidor. Intenta más tarde.</string>
+    <string name="error_general">Ha ocurrido un error. Intenta nuevamente.</string>
+
+    <!-- Pantalla de inicio de sesión -->
+    <string name="login_title">Iniciar Sesión</string>
+    <string name="login_username">Nombre de usuario</string>
+    <string name="login_password">Contraseña</string>
+    <string name="login_button">Iniciar sesión</string>
+    <string name="login_create_account">Crear nueva cuenta</string>
+
+    <!-- Pantalla de creación de cuenta -->
+    <string name="create_account_title">Crear Cuenta</string>
+    <string name="create_account_username">Nombre de usuario</string>
+    <string name="create_account_password">Contraseña</string>
+    <string name="create_account_confirm_password">Confirmar contraseña</string>
+    <string name="create_account_button">Crear cuenta</string>
+
+    <!-- Pantalla de selección de personaje -->
+    <string name="character_select_title">Selecciona tu Personaje</string>
+    <string name="character_create_button">Crear Nuevo Personaje</string>
+
+    <!-- Creación de personaje -->
+    <string name="character_creation_title">Crear Nuevo Personaje</string>
+    <string name="character_creation_name">Nombre:</string>
+    <string name="character_creation_class">Clase:</string>
+    <string name="character_creation_role">Rol:</string>
+    <string name="character_creation_create">Crear</string>
+
+    <!-- Pantalla principal -->
+    <string name="main_explore">Explorar</string>
+    <string name="main_inventory">Inventario</string>
+    <string name="main_market">Mercado</string>
+    <string name="main_profile">Perfil</string>
+    <string name="main_change_character">Cambiar</string>
+
+    <!-- Exploración -->
+    <string name="explore_title">Exploración</string>
+    <string name="explore_select_zone">Selecciona una zona:</string>
+    <string name="explore_select_character">Selecciona un personaje:</string>
+    <string name="explore_start_button">Comenzar Exploración</string>
+    <string name="explore_result_victory">¡Victoria!</string>
+    <string name="explore_result_defeat">Derrota</string>
+    <string name="explore_result_exp">Experiencia ganada: %d</string>
+    <string name="explore_result_drops">Objetos obtenidos:</string>
+
+    <!-- Inventario -->
+    <string name="inventory_title">Inventario</string>
+    <string name="inventory_tab_inventory">Inventario</string>
+    <string name="inventory_tab_equipment">Equipo</string>
+    <string name="inventory_tab_stats">Estadísticas</string>
+    <string name="inventory_use_equip">Usar/Equipar</string>
+    <string name="inventory_sell">Vender</string>
+
+    <!-- Mercado -->
+    <string name="market_title">Mercado</string>
+    <string name="market_tab_buy">Comprar</string>
+    <string name="market_tab_sell">Vender</string>
+    <string name="market_tab_my_listings">Mis Ventas</string>
+    <string name="market_search_hint">Buscar objetos...</string>
+    <string name="market_search_button">Buscar</string>
+    <string name="market_min_level_hint">Nivel mínimo</string>
+    <string name="market_max_price_hint">Precio máximo</string>
+    <string name="market_buy_button">Comprar</string>
+    <string name="market_sell_title">Selecciona un objeto para vender:</string>
+    <string name="market_price_hint">Precio</string>
+    <string name="market_sell_button">Vender</string>
+    <string name="market_my_listings_title">Tus objetos a la venta:</string>
+    <string name="market_cancel_listing">Cancelar Venta</string>
+</resources>
