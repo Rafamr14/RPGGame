@@ -8,23 +8,36 @@ import com.google.gson.GsonBuilder;
 import com.rafa.rpggame.models.UserAccount;
 import com.rafa.rpggame.models.character.Character;
 
+import java.util.ArrayList;
+
 /**
- * Un gestor de datos simplificado que guarda toda la información del juego
- * directamente en SharedPreferences usando Gson para serializar/deserializar.
+ * Gestor de datos simplificado para evitar problemas de persistencia
  */
 public class GameDataManager {
     private static final String TAG = "GameDataManager";
     private static final String PREF_NAME = "game_data";
     private static final String KEY_USER_ACCOUNT = "user_account";
-    private static final String KEY_CURRENT_CHARACTER_ID = "current_character_id";
+    private static final String KEY_SELECTED_CHARACTER_ID = "selected_character_id";
 
     private static Context appContext;
     private static UserAccount userAccount;
     private static Gson gson;
 
+    /**
+     * Inicializa el gestor de datos con un contexto de aplicación
+     */
     public static void initialize(Context context) {
+        if (context == null) {
+            Log.e(TAG, "Context nulo al inicializar GameDataManager");
+            return;
+        }
+
         appContext = context.getApplicationContext();
-        gson = new GsonBuilder().serializeNulls().create();
+        gson = new GsonBuilder()
+                .serializeNulls()
+                .create();
+
+        // Intenta cargar datos existentes
         loadData();
     }
 
@@ -33,37 +46,69 @@ public class GameDataManager {
      */
     private static void loadData() {
         try {
+            if (appContext == null) {
+                Log.e(TAG, "Context nulo al cargar datos");
+                return;
+            }
+
             SharedPreferences prefs = appContext.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
+
+            // Cargar datos de la cuenta
             String userAccountJson = prefs.getString(KEY_USER_ACCOUNT, null);
-            long selectedCharacterId = prefs.getLong(KEY_CURRENT_CHARACTER_ID, -1);
-
             if (userAccountJson != null) {
-                userAccount = gson.fromJson(userAccountJson, UserAccount.class);
-                Log.d(TAG, "Loaded account: " + userAccount.getUsername());
-                Log.d(TAG, "Characters: " + (userAccount.getCharacters() != null ? userAccount.getCharacters().size() : 0));
+                try {
+                    // Intentar deserializar la cuenta
+                    userAccount = gson.fromJson(userAccountJson, UserAccount.class);
 
-                // Restaurar el personaje seleccionado
-                if (selectedCharacterId != -1 && userAccount.getCharacters() != null) {
-                    for (Character character : userAccount.getCharacters()) {
-                        if (character.getId() == selectedCharacterId) {
-                            userAccount.setSelectedCharacter(character);
-                            Log.d(TAG, "Restored selected character: " + character.getName());
-                            break;
+                    // Verificar que la cuenta sea válida
+                    if (userAccount != null) {
+                        Log.d(TAG, "Cuenta cargada: " + userAccount.getUsername());
+
+                        // Asegurar que la lista de personajes no sea nula
+                        if (userAccount.getCharacters() == null) {
+                            userAccount.setCharacters(new ArrayList<>());
                         }
-                    }
-                }
 
-                // Si no hay personaje seleccionado pero hay personajes, seleccionar el primero
-                if (userAccount.getSelectedCharacter() == null &&
-                        userAccount.getCharacters() != null &&
-                        !userAccount.getCharacters().isEmpty()) {
-                    userAccount.setSelectedCharacter(userAccount.getCharacters().get(0));
-                    Log.d(TAG, "Auto-selected first character: " + userAccount.getSelectedCharacter().getName());
-                    saveData();
+                        // Cargar el ID del personaje seleccionado
+                        long selectedCharacterId = prefs.getLong(KEY_SELECTED_CHARACTER_ID, -1);
+                        if (selectedCharacterId != -1) {
+                            // Buscar el personaje por ID
+                            Character selectedCharacter = null;
+                            for (Character character : userAccount.getCharacters()) {
+                                if (character.getId() == selectedCharacterId) {
+                                    selectedCharacter = character;
+                                    break;
+                                }
+                            }
+
+                            // Establecer el personaje seleccionado
+                            if (selectedCharacter != null) {
+                                userAccount.setSelectedCharacter(selectedCharacter);
+                                Log.d(TAG, "Personaje seleccionado restaurado: " + selectedCharacter.getName());
+                            } else if (!userAccount.getCharacters().isEmpty()) {
+                                // Si no se encuentra el personaje guardado pero hay personajes, seleccionar el primero
+                                userAccount.setSelectedCharacter(userAccount.getCharacters().get(0));
+                                Log.d(TAG, "Personaje seleccionado no encontrado, se seleccionó automáticamente: " +
+                                        userAccount.getSelectedCharacter().getName());
+                            }
+                        } else if (!userAccount.getCharacters().isEmpty()) {
+                            // Si no hay personaje seleccionado guardado pero hay personajes, seleccionar el primero
+                            userAccount.setSelectedCharacter(userAccount.getCharacters().get(0));
+                            Log.d(TAG, "Seleccionado automáticamente el primer personaje: " +
+                                    userAccount.getSelectedCharacter().getName());
+                        }
+                    } else {
+                        Log.e(TAG, "La cuenta deserializada es nula");
+                    }
+                } catch (Exception e) {
+                    Log.e(TAG, "Error al deserializar la cuenta", e);
+                    userAccount = null;
                 }
+            } else {
+                Log.d(TAG, "No se encontró una cuenta guardada");
             }
         } catch (Exception e) {
-            Log.e(TAG, "Error loading game data", e);
+            Log.e(TAG, "Error al cargar datos", e);
             userAccount = null;
         }
     }
@@ -73,78 +118,115 @@ public class GameDataManager {
      */
     public static void saveData() {
         try {
+            if (appContext == null) {
+                Log.e(TAG, "Context nulo al guardar datos");
+                return;
+            }
+
             if (userAccount == null) {
-                Log.w(TAG, "Cannot save: no account data");
+                Log.w(TAG, "No hay cuenta para guardar");
                 return;
             }
 
             SharedPreferences prefs = appContext.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
             SharedPreferences.Editor editor = prefs.edit();
 
-            // Guardar la cuenta completa
+            // Guardar datos de la cuenta
             String userAccountJson = gson.toJson(userAccount);
             editor.putString(KEY_USER_ACCOUNT, userAccountJson);
 
-            // Guardar el ID del personaje seleccionado por separado
+            // Guardar ID del personaje seleccionado
             if (userAccount.getSelectedCharacter() != null) {
-                editor.putLong(KEY_CURRENT_CHARACTER_ID, userAccount.getSelectedCharacter().getId());
-                Log.d(TAG, "Saved selected character ID: " + userAccount.getSelectedCharacter().getId());
+                editor.putLong(KEY_SELECTED_CHARACTER_ID, userAccount.getSelectedCharacter().getId());
+                Log.d(TAG, "Guardado ID del personaje seleccionado: " + userAccount.getSelectedCharacter().getId());
             } else {
-                editor.remove(KEY_CURRENT_CHARACTER_ID);
-                Log.d(TAG, "No selected character to save");
+                editor.remove(KEY_SELECTED_CHARACTER_ID);
+                Log.d(TAG, "No hay personaje seleccionado para guardar");
             }
 
+            // Aplicar cambios
             editor.apply();
-            Log.d(TAG, "Game data saved successfully");
+            Log.d(TAG, "Datos guardados correctamente");
         } catch (Exception e) {
-            Log.e(TAG, "Error saving game data", e);
+            Log.e(TAG, "Error al guardar datos", e);
         }
     }
 
     /**
-     * Crea una nueva cuenta
+     * Crea una nueva cuenta de usuario
      */
     public static UserAccount createAccount(String username) {
-        userAccount = new UserAccount(username);
-        userAccount.setId(System.currentTimeMillis());
-        saveData();
-        return userAccount;
+        try {
+            // Verificar que el nombre de usuario sea válido
+            if (username == null || username.trim().isEmpty()) {
+                Log.e(TAG, "Nombre de usuario inválido");
+                return null;
+            }
+
+            // Crear nueva cuenta
+            userAccount = new UserAccount(username);
+            userAccount.setId(System.currentTimeMillis());
+
+            // Guardar la cuenta
+            saveData();
+
+            return userAccount;
+        } catch (Exception e) {
+            Log.e(TAG, "Error al crear cuenta", e);
+            return null;
+        }
     }
 
     /**
      * Inicia sesión con un nombre de usuario
      */
     public static boolean login(String username) {
-        if (userAccount != null && userAccount.getUsername().equals(username)) {
-            Log.d(TAG, "Logged in as: " + username);
-
-            // Verificar el personaje seleccionado
-            if (userAccount.getSelectedCharacter() != null) {
-                Log.d(TAG, "Selected character: " + userAccount.getSelectedCharacter().getName());
-            } else if (userAccount.getCharacters() != null && !userAccount.getCharacters().isEmpty()) {
-                userAccount.setSelectedCharacter(userAccount.getCharacters().get(0));
-                Log.d(TAG, "Auto-selected first character: " + userAccount.getSelectedCharacter().getName());
-                saveData();
+        try {
+            // Verificar que el nombre de usuario sea válido
+            if (username == null || username.trim().isEmpty()) {
+                Log.e(TAG, "Nombre de usuario inválido");
+                return false;
             }
 
-            return true;
+            // Verificar si la cuenta actual coincide
+            if (userAccount != null && userAccount.getUsername().equals(username)) {
+                Log.d(TAG, "Sesión iniciada como: " + username);
+                return true;
+            }
+
+            Log.d(TAG, "Inicio de sesión fallido: " + username);
+            return false;
+        } catch (Exception e) {
+            Log.e(TAG, "Error al iniciar sesión", e);
+            return false;
         }
-        Log.d(TAG, "Login failed: " + username);
-        return false;
     }
 
     /**
      * Cierra la sesión actual
      */
     public static void logout() {
-        saveData();
-        userAccount = null;
+        try {
+            // Guardar datos antes de cerrar sesión
+            saveData();
+
+            // Limpiar la referencia a la cuenta
+            userAccount = null;
+
+            Log.d(TAG, "Sesión cerrada correctamente");
+        } catch (Exception e) {
+            Log.e(TAG, "Error al cerrar sesión", e);
+        }
     }
 
     /**
      * Obtiene la cuenta actual
      */
     public static UserAccount getCurrentAccount() {
+        if (userAccount == null) {
+            // Intentar cargar datos si no hay cuenta
+            loadData();
+        }
         return userAccount;
     }
 
@@ -159,9 +241,23 @@ public class GameDataManager {
      * Elimina todos los datos guardados
      */
     public static void clearAllData() {
-        SharedPreferences prefs = appContext.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
-        prefs.edit().clear().apply();
-        userAccount = null;
-        Log.d(TAG, "All game data cleared");
+        try {
+            if (appContext != null) {
+                SharedPreferences prefs = appContext.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
+                prefs.edit().clear().apply();
+            }
+
+            userAccount = null;
+            Log.d(TAG, "Todos los datos han sido eliminados");
+        } catch (Exception e) {
+            Log.e(TAG, "Error al eliminar datos", e);
+        }
+    }
+
+    /**
+     * Verifica si existe una sesión activa
+     */
+    public static boolean hasActiveSession() {
+        return userAccount != null;
     }
 }

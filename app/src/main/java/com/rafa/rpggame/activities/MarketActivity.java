@@ -1,11 +1,13 @@
 package com.rafa.rpggame.activities;
 
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.Spinner;
 import android.widget.TabHost;
@@ -15,6 +17,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.rafa.rpggame.R;
 import com.rafa.rpggame.adapters.ItemAdapter;
 import com.rafa.rpggame.adapters.MarketListingAdapter;
+import com.rafa.rpggame.managers.AppState;
 import com.rafa.rpggame.managers.MarketManager;
 import com.rafa.rpggame.managers.GameDataManager;
 import com.rafa.rpggame.models.UserAccount;
@@ -27,14 +30,14 @@ import com.rafa.rpggame.models.market.Market;
 import com.rafa.rpggame.models.market.MarketListing;
 import android.content.Context;
 import android.view.LayoutInflater;
-import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ImageView;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class MarketActivity extends AppCompatActivity {
+    private static final String TAG = "MarketActivity";
+
     private UserAccount userAccount;
     private Market market;
 
@@ -78,8 +81,10 @@ public class MarketActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_market);
 
+        Log.d(TAG, "Iniciando MarketActivity");
+
         // Obtener datos
-        userAccount = GameDataManager.getCurrentAccount();
+        userAccount = AppState.getInstance().getUserAccount();
         market = MarketManager.getMarket();
 
         // Inicializar vistas
@@ -116,8 +121,105 @@ public class MarketActivity extends AppCompatActivity {
         initMyListingsTab();
 
         updateUI();
-    }
 
+        Log.d(TAG, "MarketActivity inicializada");
+    }
+    private void handleCharacterPurchase(CharacterTemplate template) {
+        if (template == null) {
+            Log.e(TAG, "Error: Se intentó comprar un personaje nulo");
+            Toast.makeText(this, "Error: Personaje no válido", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        Log.d(TAG, "Iniciando compra de personaje: " + template.getName() +
+                " (Clase: " + template.getCharacterClass() + ", Rol: " + template.getRole() + ")");
+
+        // Verificar si el usuario tiene suficientes monedas
+        if (userAccount.getCoins() < template.getPrice()) {
+            Log.d(TAG, "Monedas insuficientes. Tiene: " + userAccount.getCoins() +
+                    ", Necesita: " + template.getPrice());
+            Toast.makeText(this, "No tienes suficientes monedas", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        try {
+            // Generar un ID único para el personaje basado en timestamp + número aleatorio
+            long characterId = System.currentTimeMillis() + (long)(Math.random() * 10000);
+            Log.d(TAG, "ID generado para el personaje: " + characterId);
+
+            // Crear el nuevo personaje
+            Character newCharacter = new Character(
+                    template.getName(),
+                    template.getCharacterClass(),
+                    template.getRole()
+            );
+            newCharacter.setId(characterId);
+
+            // Reducir monedas del usuario
+            userAccount.reduceCoins(template.getPrice());
+            Log.d(TAG, "Monedas reducidas. Monedas restantes: " + userAccount.getCoins());
+
+            // Añadir el personaje a la cuenta del usuario
+            userAccount.getCharacters().add(newCharacter);
+            Log.d(TAG, "Personaje añadido a la lista. Total personajes: " + userAccount.getCharacters().size());
+
+            // Si no hay personaje seleccionado, seleccionar este
+            if (userAccount.getSelectedCharacter() == null) {
+                userAccount.setSelectedCharacter(newCharacter);
+                Log.d(TAG, "Personaje seleccionado automáticamente: " + newCharacter.getName());
+            }
+
+            // Guardar cambios
+            GameDataManager.updateAccount();
+            Log.d(TAG, "Cambios guardados en GameDataManager");
+
+            // Registrar todos los personajes para depuración
+            Log.d(TAG, "Personajes después de la compra:");
+            for (Character c : userAccount.getCharacters()) {
+                Log.d(TAG, "  - " + c.getName() + " (ID: " + c.getId() + ")");
+            }
+
+            // Registrar personaje seleccionado
+            if (userAccount.getSelectedCharacter() != null) {
+                Log.d(TAG, "Personaje seleccionado después de la compra: " +
+                        userAccount.getSelectedCharacter().getName() +
+                        " (ID: " + userAccount.getSelectedCharacter().getId() + ")");
+            }
+
+            // Verificar que el personaje exista en la cuenta después de guardar
+            boolean foundAfterSave = false;
+            userAccount = GameDataManager.getCurrentAccount(); // Recargar la cuenta desde almacenamiento
+
+            for (Character c : userAccount.getCharacters()) {
+                if (c.getId() == characterId) {
+                    foundAfterSave = true;
+                    Log.d(TAG, "¡Personaje verificado en la cuenta después de guardar!");
+                    break;
+                }
+            }
+
+            if (!foundAfterSave) {
+                Log.w(TAG, "¡ADVERTENCIA! El personaje no se encontró después de guardar");
+            }
+
+            // Notificar al usuario
+            Toast.makeText(this, "¡Personaje comprado con éxito! " + newCharacter.getName(),
+                    Toast.LENGTH_SHORT).show();
+
+            // Actualizar UI
+            updateUI();
+
+            // Actualizar el adaptador
+            if (characterAdapter != null) {
+                characterAdapter.notifyDataSetChanged();
+            }
+
+        } catch (Exception e) {
+            Log.e(TAG, "Error durante la compra del personaje", e);
+            Toast.makeText(this, "Error al comprar el personaje: " + e.getMessage(),
+                    Toast.LENGTH_SHORT).show();
+        }
+    }
     private void initCharactersTab() {
         characterMarketListView = findViewById(R.id.character_market_list_view);
         buyCharacterButton = findViewById(R.id.buy_character_button);
@@ -128,6 +230,8 @@ public class MarketActivity extends AppCompatActivity {
         // Crear adaptador para mostrar los personajes en venta
         characterAdapter = new CharacterTemplateAdapter(this, availableCharacters);
         characterMarketListView.setAdapter(characterAdapter);
+
+        // Manejar la selección de personaje
         characterMarketListView.setOnItemClickListener((parent, view, position, id) -> {
             selectedCharacterTemplate = availableCharacters.get(position);
 
@@ -140,49 +244,10 @@ public class MarketActivity extends AppCompatActivity {
             }
         });
 
-        // Manejar la selección de personaje
-        characterMarketListView.setOnItemClickListener((parent, view, position, id) -> {
-            selectedCharacterTemplate = availableCharacters.get(position);
-            buyCharacterButton.setEnabled(true);
-        });
-
         buyCharacterButton.setOnClickListener(v -> {
             if (selectedCharacterTemplate != null) {
-                if (userAccount.getCoins() >= selectedCharacterTemplate.getPrice()) {
-                    try {
-                        // Generar un ID único para el personaje
-                        long characterId = System.currentTimeMillis();
-
-                        // Comprar el personaje
-                        userAccount.reduceCoins(selectedCharacterTemplate.getPrice());
-
-                        // Crear el personaje y añadirlo a la cuenta
-                        Character newCharacter = new Character(
-                                selectedCharacterTemplate.getName(),
-                                selectedCharacterTemplate.getCharacterClass(),
-                                selectedCharacterTemplate.getRole()
-                        );
-                        newCharacter.setId(characterId);
-                        userAccount.addCharacter(newCharacter);
-
-                        // Seleccionar explícitamente el personaje
-                        userAccount.setSelectedCharacter(newCharacter);
-
-                        // Guardar cambios usando el nuevo gestor
-                        GameDataManager.updateAccount();
-
-                        Toast.makeText(this, "¡Personaje comprado con éxito! " + newCharacter.getName(), Toast.LENGTH_SHORT).show();
-
-                        // Actualizar la interfaz inmediatamente
-                        characterAdapter.notifyDataSetChanged();
-                        updateUI();
-                    } catch (Exception e) {
-                        Toast.makeText(this, "Error: " + e.getMessage(), Toast.LENGTH_LONG).show();
-                        e.printStackTrace();
-                    }
-                } else {
-                    Toast.makeText(this, "No tienes suficientes monedas", Toast.LENGTH_SHORT).show();
-                }
+                // Usar el nuevo método de compra
+                handleCharacterPurchase(selectedCharacterTemplate);
             }
         });
     }
@@ -338,40 +403,71 @@ public class MarketActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
+        Log.d(TAG, "onResume MarketActivity");
+
+        // Refrescar la cuenta del usuario directamente desde AppState
+        userAccount = AppState.getInstance().getUserAccount();
+
         market.cleanExpiredListings();
         updateUI();
     }
 
     private void updateUI() {
+        // Recargar datos actualizados
+        userAccount = AppState.getInstance().getUserAccount();
+
+        Log.d(TAG, "Actualizando UI. Monedas: " + userAccount.getCoins());
         coinsText.setText("Monedas: " + userAccount.getCoins());
 
         // Actualizar listas
         if (userAccount.getSelectedCharacter() != null) {
-            inventoryAdapter.updateItems(userAccount.getSelectedCharacter().getInventory());
+            if (inventoryAdapter != null) {
+                inventoryAdapter.updateItems(userAccount.getSelectedCharacter().getInventory());
+            }
+
+            // Habilitar el sellButton si ahora tiene un personaje seleccionado
+            if (sellButton != null) {
+                sellButton.setEnabled(selectedInventoryItem != null);
+            }
         }
 
         List<MarketListing> myListings = market.getListingsBySeller(userAccount);
-        myListingsAdapter.updateListings(myListings);
+        if (myListingsAdapter != null) {
+            myListingsAdapter.updateListings(myListings);
+        }
 
         // Restablecer selecciones
         selectedInventoryItem = null;
         selectedListing = null;
         selectedCharacterTemplate = null;
-        buyButton.setEnabled(false);
-        cancelListingButton.setEnabled(false);
-        buyCharacterButton.setEnabled(false);
+
+        // Actualizar estados de botones
+        if (buyButton != null) buyButton.setEnabled(false);
+        if (cancelListingButton != null) cancelListingButton.setEnabled(false);
+        if (buyCharacterButton != null) buyCharacterButton.setEnabled(false);
+
         updateSellButton();
 
         // Guardar cambios
-        GameDataManager.updateAccount();
+        AppState.getInstance().saveData();
         MarketManager.updateMarket();
+
+        // Refrescar el adaptador de personajes si existe
+        if (characterAdapter != null) {
+            characterAdapter.notifyDataSetChanged();
+        }
+
+        Log.d(TAG, "UI actualizada");
     }
 
     private void updateSellButton() {
         boolean canSell = selectedInventoryItem != null &&
                 !priceEditText.getText().toString().isEmpty() &&
                 userAccount.getSelectedCharacter() != null;
-        sellButton.setEnabled(canSell);
+
+        if (sellButton != null) {
+            sellButton.setEnabled(canSell);
+        }
     }
 
     // Clase interna para definir una plantilla de personaje
@@ -425,7 +521,6 @@ public class MarketActivity extends AppCompatActivity {
             this.characters = characters;
         }
 
-        // Dentro de la clase CharacterTemplateAdapter, actualizamos el método getView:
         @Override
         public View getView(int position, View convertView, ViewGroup parent) {
             if (convertView == null) {
@@ -476,18 +571,27 @@ public class MarketActivity extends AppCompatActivity {
             return convertView;
         }
 
-        // Método para verificar si un personaje ya está comprado
-        private boolean isCharacterOwned(CharacterTemplate template) {
-            for (Character character : userAccount.getCharacters()) {
+        // Método para verificar si un personaje ya está comprado usando AppState
+        public boolean isCharacterOwned(CharacterTemplate template) {
+            Log.d(TAG, "Verificando si el personaje ya está comprado: " + template.getName());
+
+            // Obtener la lista actualizada de personajes directamente de AppState
+            List<Character> characters = AppState.getInstance().getCharacters();
+            Log.d(TAG, "Personajes en la cuenta: " + characters.size());
+
+            for (Character character : characters) {
+                Log.d(TAG, "Comparando con: " + character.getName() + " - Clase: " + character.getCharacterClass() + " - Rol: " + character.getRole());
                 if (character.getName().equals(template.getName()) &&
                         character.getCharacterClass() == template.getCharacterClass() &&
                         character.getRole() == template.getRole()) {
+                    Log.d(TAG, "Personaje encontrado en la cuenta");
                     return true;
                 }
             }
+
+            Log.d(TAG, "Personaje no encontrado en la cuenta");
             return false;
         }
-
     }
 
     // Método para crear la lista de personajes disponibles

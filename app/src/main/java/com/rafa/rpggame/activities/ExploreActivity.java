@@ -2,6 +2,9 @@ package com.rafa.rpggame.activities;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.util.Log;
+import android.view.View;
+import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.ListView;
 import android.widget.Spinner;
@@ -21,6 +24,8 @@ import com.rafa.rpggame.models.zones.Zone;
 import java.util.List;
 
 public class ExploreActivity extends AppCompatActivity {
+    private static final String TAG = "ExploreActivity";
+
     private UserAccount userAccount;
     private Character selectedCharacter;
 
@@ -29,6 +34,7 @@ public class ExploreActivity extends AppCompatActivity {
     private Spinner zoneSpinner;
     private ListView characterListView;
     private Button exploreButton;
+    private Button refreshButton; // Nuevo botón para forzar refresco
     private CharacterAdapter characterAdapter;
     private ZoneAdapter zoneAdapter;
 
@@ -36,6 +42,8 @@ public class ExploreActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_explore);
+
+        Log.d(TAG, "Iniciando ExploreActivity");
 
         // Obtener datos
         userAccount = GameDataManager.getCurrentAccount();
@@ -48,9 +56,21 @@ public class ExploreActivity extends AppCompatActivity {
         characterListView = findViewById(R.id.character_list_view);
         exploreButton = findViewById(R.id.explore_button);
 
+        // Añadir botón de refresco
+        refreshButton = new Button(this);
+        refreshButton.setText("Refrescar Lista");
+        refreshButton.setOnClickListener(v -> forceRefreshCharacterList());
+
+        // Añadir el botón a la vista (puedes modificar esto para que coincida con tu layout)
+        ViewGroup layout = findViewById(R.id.explore_layout);
+        if (layout != null) {
+            layout.addView(refreshButton);
+        }
+
         // Verificar si hay un personaje seleccionado
         if (selectedCharacter == null) {
             showMessage("Primero debes seleccionar un personaje");
+
             // Si hay personajes disponibles pero ninguno seleccionado, seleccionar el primero
             if (userAccount.getCharacters() != null && !userAccount.getCharacters().isEmpty()) {
                 selectedCharacter = userAccount.getCharacters().get(0);
@@ -66,6 +86,15 @@ public class ExploreActivity extends AppCompatActivity {
         }
 
         // Configurar adaptadores
+        Log.d(TAG, "Configurando adaptadores");
+        Log.d(TAG, "Personajes disponibles: " + (userAccount.getCharacters() != null ? userAccount.getCharacters().size() : 0));
+
+        if (userAccount.getCharacters() != null) {
+            for (Character c : userAccount.getCharacters()) {
+                Log.d(TAG, "Personaje disponible: " + c.getName() + " (ID: " + c.getId() + ")");
+            }
+        }
+
         characterAdapter = new CharacterAdapter(this, userAccount.getCharacters());
         characterListView.setAdapter(characterAdapter);
 
@@ -78,6 +107,9 @@ public class ExploreActivity extends AppCompatActivity {
         int selectedPosition = userAccount.getCharacters().indexOf(selectedCharacter);
         if (selectedPosition >= 0) {
             characterListView.setItemChecked(selectedPosition, true);
+            Log.d(TAG, "Personaje seleccionado en la posición " + selectedPosition);
+        } else {
+            Log.w(TAG, "No se pudo encontrar el personaje seleccionado en la lista");
         }
 
         // Eventos
@@ -91,6 +123,8 @@ public class ExploreActivity extends AppCompatActivity {
             List<Zone> zones = ZoneManager.getAvailableZones(selectedCharacter.getLevel());
             zoneAdapter = new ZoneAdapter(ExploreActivity.this, zones);
             zoneSpinner.setAdapter(zoneAdapter);
+
+            Log.d(TAG, "Personaje seleccionado de la lista: " + selectedCharacter.getName());
         });
 
         exploreButton.setOnClickListener(v -> {
@@ -122,6 +156,9 @@ public class ExploreActivity extends AppCompatActivity {
         });
 
         updateUI();
+
+        // Forzar refresco inicial de la lista
+        forceRefreshCharacterList();
     }
 
     private void updateUI() {
@@ -176,23 +213,65 @@ public class ExploreActivity extends AppCompatActivity {
             return;
         }
 
-        // Asegurarse de que el adaptador esté inicializado
-        if (characterAdapter == null) {
-            characterAdapter = new CharacterAdapter(this, userAccount.getCharacters());
-            characterListView.setAdapter(characterAdapter);
-        } else {
-            // Recargar la lista de personajes
-            characterAdapter.updateCharacters(userAccount.getCharacters());
-        }
-
-        // Seleccionar el personaje actual en la lista
-        int selectedPosition = userAccount.getCharacters().indexOf(selectedCharacter);
-        if (selectedPosition >= 0) {
-            characterListView.setItemChecked(selectedPosition, true);
-        }
-
         // Actualizar la interfaz
         updateUI();
+
+        // Forzar refresco de la lista de personajes
+        forceRefreshCharacterList();
+    }
+
+    /**
+     * Método para forzar la actualización de la lista de personajes
+     */
+    private void forceRefreshCharacterList() {
+        try {
+            Log.d(TAG, "Forzando refresco de lista de personajes");
+
+            // Recargar datos actualizados
+            userAccount = GameDataManager.getCurrentAccount();
+
+            // Recargar la lista desde GameDataManager
+            List<Character> characters = userAccount.getCharacters();
+
+            // Registrar la lista actual
+            Log.d(TAG, "Refrescando lista de personajes. Total: " +
+                    (characters != null ? characters.size() : 0));
+
+            if (characters != null) {
+                for (Character c : characters) {
+                    Log.d(TAG, "Personaje en lista: " + c.getName() + " (ID: " + c.getId() + ")");
+                }
+            }
+
+            // Forzar la actualización del adaptador
+            if (characterAdapter != null) {
+                characterAdapter.updateCharacters(characters);
+                Log.d(TAG, "Adaptador actualizado con nuevos datos");
+            } else {
+                // Si el adaptador no existe, crearlo
+                characterAdapter = new CharacterAdapter(this, characters);
+                characterListView.setAdapter(characterAdapter);
+                Log.d(TAG, "Creado nuevo adaptador para los personajes");
+            }
+
+            // Marcar el personaje seleccionado en la lista
+            selectedCharacter = userAccount.getSelectedCharacter();
+            if (selectedCharacter != null && characters != null) {
+                int position = characters.indexOf(selectedCharacter);
+                if (position >= 0) {
+                    characterListView.setItemChecked(position, true);
+                    Log.d(TAG, "Marcado personaje seleccionado en posición " + position);
+                } else {
+                    Log.w(TAG, "No se pudo encontrar el personaje seleccionado en la lista");
+                }
+            }
+
+            // Mostrar mensaje informativo
+            showMessage("Lista de personajes actualizada");
+        } catch (Exception e) {
+            Log.e(TAG, "Error al refrescar lista de personajes", e);
+            showMessage("Error al actualizar la lista de personajes");
+        }
     }
 
     private void showMessage(String message) {

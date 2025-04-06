@@ -20,6 +20,7 @@ import com.rafa.rpggame.models.items.ConsumableItem;
 import com.rafa.rpggame.models.items.EquipableItem;
 import com.rafa.rpggame.models.items.EquipmentSlot;
 import com.rafa.rpggame.models.items.Item;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -39,18 +40,37 @@ public class InventoryActivity extends AppCompatActivity {
     private EquipmentAdapter equipmentAdapter;
     private Item selectedItem;
     private EquipmentSlot selectedSlot;
+
     public void refreshInventory() {
         // Actualizar UI
         updateUI();
     }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_inventory);
 
-        // Obtener datos
+        // Obtener datos actualizados del GameDataManager
         userAccount = GameDataManager.getCurrentAccount();
         selectedCharacter = userAccount.getSelectedCharacter();
+
+        // Verificar si hay personaje seleccionado
+        if (selectedCharacter == null) {
+            // Intentar seleccionar un personaje automáticamente
+            if (userAccount.getCharacters() != null && !userAccount.getCharacters().isEmpty()) {
+                selectedCharacter = userAccount.getCharacters().get(0);
+                userAccount.setSelectedCharacter(selectedCharacter);
+                GameDataManager.updateAccount();
+                Toast.makeText(this, "Se ha seleccionado automáticamente: " + selectedCharacter.getName(),
+                        Toast.LENGTH_SHORT).show();
+            } else {
+                Toast.makeText(this, "No tienes personajes. Ve a la tienda para comprar uno.",
+                        Toast.LENGTH_SHORT).show();
+                finish();
+                return;
+            }
+        }
 
         // Inicializar vistas
         tabHost = findViewById(R.id.tab_host);
@@ -132,6 +152,16 @@ public class InventoryActivity extends AppCompatActivity {
     }
 
     private void updateUI() {
+        // Asegurarse de tener datos actualizados
+        userAccount = GameDataManager.getCurrentAccount();
+        selectedCharacter = userAccount.getSelectedCharacter();
+
+        if (selectedCharacter == null) {
+            Toast.makeText(this, "Error: No hay personaje seleccionado", Toast.LENGTH_SHORT).show();
+            finish();
+            return;
+        }
+
         characterInfoText.setText(selectedCharacter.getName() + " - Nivel " + selectedCharacter.getLevel());
 
         // Actualizar adaptadores
@@ -174,5 +204,30 @@ public class InventoryActivity extends AppCompatActivity {
             useButton.setEnabled(false);
             sellButton.setEnabled(false);
         }
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+
+        // Recargar datos actualizados
+        userAccount = GameDataManager.getCurrentAccount();
+        selectedCharacter = userAccount.getSelectedCharacter();
+
+        // Verificar si todavía hay un personaje seleccionado
+        if (selectedCharacter == null) {
+            if (userAccount.getCharacters() != null && !userAccount.getCharacters().isEmpty()) {
+                selectedCharacter = userAccount.getCharacters().get(0);
+                userAccount.setSelectedCharacter(selectedCharacter);
+                GameDataManager.updateAccount();
+            } else {
+                Toast.makeText(this, "No tienes personajes", Toast.LENGTH_SHORT).show();
+                finish();
+                return;
+            }
+        }
+
+        // Actualizar UI con datos frescos
+        updateUI();
     }
 }

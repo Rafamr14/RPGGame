@@ -37,18 +37,40 @@ public class ProfileActivity extends AppCompatActivity {
         logoutButton = findViewById(R.id.logout_button);
 
         // Configurar UI
+        updateUI();
+
+        // Evento de logout
+        logoutButton.setOnClickListener(v -> {
+            // Guardar datos actuales antes de cerrar sesión
+            GameDataManager.saveData();
+
+            // Ahora cerrar sesión
+            GameDataManager.logout();
+
+            // Ir a la pantalla de login
+            Intent intent = new Intent(ProfileActivity.this, LoginActivity.class);
+            // Limpiar historial de actividades para evitar volver atrás
+            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+            startActivity(intent);
+            finish(); // Cerrar esta actividad
+        });
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+
+        // Recargar datos frescos
+        userAccount = GameDataManager.getCurrentAccount();
+        updateUI();
+    }
+
+    private void updateUI() {
         usernameText.setText(userAccount.getUsername());
         accountLevelText.setText("Nivel de cuenta: " + userAccount.getAccountLevel());
         coinsText.setText("Monedas: " + userAccount.getCoins());
         gemsText.setText("Gemas: " + userAccount.getGems());
         staminaText.setText("Stamina: " + userAccount.getStamina() + "/" + userAccount.getMaxStamina());
         charactersText.setText("Personajes: " + userAccount.getCharacters().size() + "/" + userAccount.getMaxCharacters());
-
-        // Evento de logout
-        logoutButton.setOnClickListener(v -> {
-            GameDataManager.logout();
-            startActivity(new Intent(ProfileActivity.this, LoginActivity.class));
-            finishAffinity(); // Cierra todas las actividades en la pila
-        });
     }
 }
